@@ -1,7 +1,7 @@
 """
 FastAPI application entry point.
 
-Editorial PR Matchmaking Platform - Phase 2: Structured data capture
+Editorial PR Matchmaking Platform - Phase 3: Deterministic matchmaking
 """
 
 from contextlib import asynccontextmanager
@@ -13,6 +13,7 @@ from src.companies.router import router as companies_router
 from src.core.config import settings
 from src.core.database import Base, SessionLocal, engine
 from src.journalists.router import router as journalists_router
+from src.matching.router import router as matching_router
 from src.topics.router import router as topics_router
 from src.topics.service import seed_topics
 from src.users.router import router as users_router
@@ -42,7 +43,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     description="Journalist-first PR matchmaking platform. High-signal, trust-based editorial connections.",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
@@ -52,9 +53,10 @@ app.include_router(users_router)
 app.include_router(topics_router)
 app.include_router(journalists_router)
 app.include_router(companies_router)
+app.include_router(matching_router)
 
 
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "phase": "2 - Structured data capture"}
+    return {"status": "healthy", "phase": "3 - Deterministic matchmaking"}

@@ -11,45 +11,28 @@ A journalist-first PR matchmaking platform that only connects companies and jour
 
 ## Current Phase
 
-**Phase 2: Structured Data Capture** (Complete)
+**Phase 3: Deterministic Matchmaking** (Complete)
 
-- Shared topic taxonomy (seeded with 27 topics across 5 categories)
-- Journalist profiles: beats, outlets, pitch preferences
-- Company profiles: industry, size, expertise areas
-- Many-to-many topic associations for matching foundation
+- Topic-based matching: companies find journalists with overlapping topics
+- Hard rules: only journalists accepting pitches, only active companies
+- Explainable results: every match includes why it exists
+- Bidirectional: companies search journalists, journalists search companies
 
 ## Project Structure
 
 ```
 src/
 ├── core/           # Shared infrastructure
-│   ├── config.py   # Application settings
-│   ├── database.py # Database connection
-│   └── security.py # Password hashing, JWT
 ├── auth/           # Authentication
-│   ├── schemas.py  # Auth request/response schemas
-│   ├── router.py   # Auth endpoints
-│   └── service.py  # Auth logic
 ├── users/          # User management
-│   ├── models.py   # User SQLAlchemy model
-│   ├── schemas.py  # Pydantic validation
-│   ├── router.py   # User endpoints
-│   └── service.py  # User business logic
 ├── topics/         # Shared taxonomy
-│   ├── models.py   # Topic model
-│   ├── schemas.py  # Topic schemas
-│   ├── router.py   # Topic endpoints
-│   └── service.py  # Topic logic + seeding
 ├── journalists/    # Journalist profiles
-│   ├── models.py   # JournalistProfile model
-│   ├── schemas.py  # Profile schemas
-│   ├── router.py   # Profile endpoints
-│   └── service.py  # Profile logic
 ├── companies/      # Company profiles
-│   ├── models.py   # CompanyProfile model
-│   ├── schemas.py  # Profile schemas
-│   ├── router.py   # Profile endpoints
-│   └── service.py  # Profile logic
+├── matching/       # Deterministic matchmaking
+│   ├── rules.py    # Pure matching functions
+│   ├── schemas.py  # Match result schemas
+│   ├── router.py   # Match endpoints
+│   └── service.py  # Match orchestration
 └── main.py         # FastAPI application
 ```
 
@@ -103,16 +86,51 @@ pytest tests/ -v
 | PUT | /companies/me | Update profile | Company |
 | GET | /companies/{id} | View public profile | Any user |
 
+### Matching
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /matches/journalists | Find matching journalists | Company |
+| GET | /matches/companies | Find matching companies | Journalist |
+
 ### Health
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | GET | /health | Health check | No |
 
+## Matching Logic
+
+Matches are **deterministic** and **explainable**:
+
+```
+Company requests matches
+        │
+        ▼
+┌─────────────────────────┐
+│ 1. Company has topics?  │ → No profile/topics = helpful error
+└─────────────────────────┘
+        │ Yes
+        ▼
+┌─────────────────────────┐
+│ 2. Find journalists     │
+│    with topic overlap   │
+│    AND accepting pitches│
+└─────────────────────────┘
+        │
+        ▼
+┌─────────────────────────┐
+│ 3. Return with reason:  │
+│    "Jane at TechNews    │
+│    covers AI, which     │
+│    aligns with Acme's   │
+│    expertise."          │
+└─────────────────────────┘
+```
+
 ## Roadmap
 
 1. ~~Core platform & identity~~ (Phase 1 - Complete)
 2. ~~Structured data capture~~ (Phase 2 - Complete)
-3. Deterministic matchmaking (Phase 3)
+3. ~~Deterministic matchmaking~~ (Phase 3 - Complete)
 4. Embedding-based discovery (Phase 4)
 5. LLM-assisted reasoning (Phase 5)
 6. Continuous refinement (Phase 6)
