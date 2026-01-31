@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Editorial PR Matchmaking{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Track your PR outreach progress and discover new matches</p>
+  </div>
+  <div class="flex gap-md">
+    <button class="btn btn-secondary" id="refresh-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+      Refresh
+    </button>
+    <button class="btn btn-primary" id="find-matches-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      Find Matches
+    </button>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Matches</div>
+    <div class="stat-value" id="stat-matches">{{ stats.total_matches }}</div>
+    <div class="stat-change positive">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+      +12% this week
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Outreach Sent</div>
+    <div class="stat-value" id="stat-outreach">{{ stats.outreach_sent }}</div>
+    <div class="stat-change positive">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+      +8% this week
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Response Rate</div>
+    <div class="stat-value" id="stat-response">{{ stats.response_rate }}%</div>
+    <div class="stat-change negative">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+        <polyline points="17 18 23 18 23 12"></polyline>
+      </svg>
+      -3% this week
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Avg Match Score</div>
+    <div class="stat-value" id="stat-score">{{ stats.avg_score }}</div>
+    <div class="stat-change positive">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+      +5% this week
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Progress Section -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Weekly Goals</h3>
+      <span class="status-label in-progress">In Progress</span>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-header">
+        <span class="progress-label">Overall Progress</span>
+        <span class="progress-value" id="progress-value">68%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 68%"></div>
+      </div>
+    </div>
+
+    <div class="checklist" id="goals-checklist">
+      <div class="checklist-item completed">
+        <div class="checklist-checkbox checked" onclick="toggleCheckbox(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="checklist-text">Review 10 new journalist matches</span>
+        <span class="status-label completed">Done</span>
+      </div>
+
+      <div class="checklist-item completed">
+        <div class="checklist-checkbox checked" onclick="toggleCheckbox(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="checklist-text">Send outreach to 5 top matches</span>
+        <span class="status-label completed">Done</span>
+      </div>
+
+      <div class="checklist-item">
+        <div class="checklist-checkbox" onclick="toggleCheckbox(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="checklist-text">Follow up on pending responses</span>
+        <span class="status-label in-progress">In Progress</span>
+      </div>
+
+      <div class="checklist-item">
+        <div class="checklist-checkbox" onclick="toggleCheckbox(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="checklist-text">Update company profile with Q4 news</span>
+        <span class="status-label pending">Pending</span>
+      </div>
+
+      <div class="checklist-item">
+        <div class="checklist-checkbox" onclick="toggleCheckbox(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="checklist-text">Schedule meeting with PR team</span>
+        <span class="status-label pending">Pending</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Activity Breakdown</h3>
+      <span class="text-muted">This Week</span>
+    </div>
+
+    <div class="category-breakdown">
+      <div class="category-item">
+        <div class="category-indicator deep-work"></div>
+        <div class="category-info">
+          <span class="category-name">Match Review</span>
+          <span class="category-value">12 hours</span>
+        </div>
+        <div class="category-bar">
+          <div class="category-bar-fill deep-work" style="width: 45%"></div>
+        </div>
+      </div>
+
+      <div class="category-item">
+        <div class="category-indicator outreach"></div>
+        <div class="category-info">
+          <span class="category-name">Outreach</span>
+          <span class="category-value">8 hours</span>
+        </div>
+        <div class="category-bar">
+          <div class="category-bar-fill outreach" style="width: 30%"></div>
+        </div>
+      </div>
+
+      <div class="category-item">
+        <div class="category-indicator meetings"></div>
+        <div class="category-info">
+          <span class="category-name">Meetings</span>
+          <span class="category-value">4 hours</span>
+        </div>
+        <div class="category-bar">
+          <div class="category-bar-fill meetings" style="width: 15%"></div>
+        </div>
+      </div>
+
+      <div class="category-item">
+        <div class="category-indicator admin"></div>
+        <div class="category-info">
+          <span class="category-name">Admin</span>
+          <span class="category-value">2 hours</span>
+        </div>
+        <div class="category-bar">
+          <div class="category-bar-fill admin" style="width: 8%"></div>
+        </div>
+      </div>
+
+      <div class="category-item">
+        <div class="category-indicator planning"></div>
+        <div class="category-info">
+          <span class="category-name">Planning</span>
+          <span class="category-value">1 hour</span>
+        </div>
+        <div class="category-bar">
+          <div class="category-bar-fill planning" style="width: 4%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-lg" style="padding-top: var(--space-lg); border-top: 1px solid var(--border);">
+      <div class="flex justify-between items-center mb-md">
+        <span class="text-muted">Total Time</span>
+        <span style="font-weight: 700; font-size: 1.25rem;">27 hours</span>
+      </div>
+      <div class="stat-change positive" style="justify-content: flex-end;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+          <polyline points="17 6 23 6 23 12"></polyline>
+        </svg>
+        18% more efficient than last week
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Matches Section -->
+<div class="mt-lg">
+  <div class="card-header">
+    <h3 class="card-title">Recent Matches</h3>
+    <a href="/matches" class="btn btn-outline btn-sm">View All</a>
+  </div>
+
+  <div class="grid-3 mt-md" id="recent-matches">
+    {% for match in recent_matches %}
+    <div class="match-card">
+      <div class="match-header">
+        <div class="match-avatar">{{ match.initials }}</div>
+        <div class="match-info">
+          <div class="match-name">{{ match.name }}</div>
+          <div class="match-role">{{ match.outlet }}</div>
+        </div>
+        <div class="match-score">
+          <div class="match-score-value">{{ match.score }}%</div>
+          <div class="match-score-label">Match</div>
+        </div>
+      </div>
+      <div class="match-topics">
+        {% for topic in match.topics %}
+        <span class="topic-tag">{{ topic }}</span>
+        {% endfor %}
+      </div>
+      <div class="match-reason">{{ match.reason }}</div>
+      <div class="flex gap-sm">
+        <button class="btn btn-primary btn-sm" style="flex: 1">View Profile</button>
+        <button class="btn btn-outline btn-sm" style="flex: 1">Save</button>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Placeholder cards when no data -->
+    <div class="match-card">
+      <div class="match-header">
+        <div class="match-avatar">JD</div>
+        <div class="match-info">
+          <div class="match-name">Jane Doe</div>
+          <div class="match-role">Tech Reporter at TechCrunch</div>
+        </div>
+        <div class="match-score">
+          <div class="match-score-value">92%</div>
+          <div class="match-score-label">Match</div>
+        </div>
+      </div>
+      <div class="match-topics">
+        <span class="topic-tag">AI/ML</span>
+        <span class="topic-tag">Startups</span>
+        <span class="topic-tag">Funding</span>
+      </div>
+      <div class="match-reason">Covers AI startups and frequently writes about Series A funding rounds.</div>
+      <div class="flex gap-sm">
+        <button class="btn btn-primary btn-sm" style="flex: 1">View Profile</button>
+        <button class="btn btn-outline btn-sm" style="flex: 1">Save</button>
+      </div>
+    </div>
+
+    <div class="match-card">
+      <div class="match-header">
+        <div class="match-avatar">MS</div>
+        <div class="match-info">
+          <div class="match-name">Mike Smith</div>
+          <div class="match-role">Business Editor at Forbes</div>
+        </div>
+        <div class="match-score">
+          <div class="match-score-value">87%</div>
+          <div class="match-score-label">Match</div>
+        </div>
+      </div>
+      <div class="match-topics">
+        <span class="topic-tag">Enterprise</span>
+        <span class="topic-tag">SaaS</span>
+      </div>
+      <div class="match-reason">Focuses on enterprise software and B2B technology trends.</div>
+      <div class="flex gap-sm">
+        <button class="btn btn-primary btn-sm" style="flex: 1">View Profile</button>
+        <button class="btn btn-outline btn-sm" style="flex: 1">Save</button>
+      </div>
+    </div>
+
+    <div class="match-card">
+      <div class="match-header">
+        <div class="match-avatar">AL</div>
+        <div class="match-info">
+          <div class="match-name">Alice Lee</div>
+          <div class="match-role">Senior Writer at Wired</div>
+        </div>
+        <div class="match-score">
+          <div class="match-score-value">84%</div>
+          <div class="match-score-label">Match</div>
+        </div>
+      </div>
+      <div class="match-topics">
+        <span class="topic-tag">AI Ethics</span>
+        <span class="topic-tag">Tech Policy</span>
+      </div>
+      <div class="match-reason">Writes in-depth features on AI governance and tech regulation.</div>
+      <div class="flex gap-sm">
+        <button class="btn btn-primary btn-sm" style="flex: 1">View Profile</button>
+        <button class="btn btn-outline btn-sm" style="flex: 1">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Toggle checkbox functionality
+  function toggleCheckbox(element) {
+    const item = element.closest('.checklist-item');
+    const isChecked = element.classList.contains('checked');
+
+    if (isChecked) {
+      element.classList.remove('checked');
+      item.classList.remove('completed');
+      item.querySelector('.status-label').className = 'status-label pending';
+      item.querySelector('.status-label').textContent = 'Pending';
+    } else {
+      element.classList.add('checked');
+      item.classList.add('completed');
+      item.querySelector('.status-label').className = 'status-label completed';
+      item.querySelector('.status-label').textContent = 'Done';
+    }
+
+    updateProgress();
+  }
+
+  // Update progress bar
+  function updateProgress() {
+    const checkboxes = document.querySelectorAll('.checklist-checkbox');
+    const checked = document.querySelectorAll('.checklist-checkbox.checked').length;
+    const total = checkboxes.length;
+    const percentage = Math.round((checked / total) * 100);
+
+    document.getElementById('progress-value').textContent = percentage + '%';
+    document.getElementById('progress-fill').style.width = percentage + '%';
+  }
+</script>
+{% endblock %}

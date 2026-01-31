@@ -11,30 +11,41 @@ A journalist-first PR matchmaking platform that only connects companies and jour
 
 ## Current Phase
 
-**Phase 1: Core Platform & Identity** (Complete)
+**Phase 6: Continuous Refinement** (Complete)
 
-- User registration and authentication
-- Three user types: Journalist, Company, Admin
-- JWT-based authentication
-- Basic authorization (admin-only endpoints)
+- Feedback system for match quality tracking
+- User and platform analytics
+- Helpfulness rate calculation
+- Match outcome tracking (contacted, successful)
+- New `/feedback/*` and `/analytics/*` endpoints
 
 ## Project Structure
 
 ```
 src/
 ├── core/           # Shared infrastructure
-│   ├── config.py   # Application settings
-│   ├── database.py # Database connection
-│   └── security.py # Password hashing, JWT
-├── users/          # User management
-│   ├── models.py   # User SQLAlchemy model
-│   ├── schemas.py  # Pydantic validation
-│   ├── router.py   # User endpoints
-│   └── service.py  # User business logic
 ├── auth/           # Authentication
-│   ├── schemas.py  # Auth request/response schemas
-│   ├── router.py   # Auth endpoints
-│   └── service.py  # Auth logic
+├── users/          # User management
+├── topics/         # Shared taxonomy
+├── journalists/    # Journalist profiles
+├── companies/      # Company profiles
+├── matching/       # Deterministic + similarity matching
+├── embeddings/     # Embedding generation & storage
+│   ├── generator.py  # sentence-transformers integration
+│   ├── models.py     # ProfileEmbedding storage
+│   └── service.py    # Embedding CRUD & similarity search
+├── llm/            # LLM-assisted reasoning (Phase 5)
+│   ├── provider.py   # Abstract LLM provider interface
+│   ├── mock.py       # Mock provider for testing
+│   ├── service.py    # LLM orchestration
+│   └── schemas.py    # API response schemas
+├── feedback/       # Match feedback system (Phase 6)
+│   ├── models.py     # MatchFeedback model
+│   ├── service.py    # Feedback CRUD & stats
+│   └── router.py     # Feedback API endpoints
+├── analytics/      # Platform analytics (Phase 6)
+│   ├── service.py    # Metrics calculation
+│   └── router.py     # Analytics API endpoints
 └── main.py         # FastAPI application
 ```
 
@@ -53,20 +64,108 @@ pytest tests/ -v
 
 ## API Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
+### Authentication
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
 | POST | /auth/register | Register a new user | No |
 | POST | /auth/login | Get access token | No |
+
+### Matching (Deterministic)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /matches/journalists | Topic-based journalist matches | Company |
+| GET | /matches/companies | Topic-based company matches | Journalist |
+
+### Matching (Similarity)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /matches/similar/journalists | Semantic similarity matches | Company |
+| GET | /matches/similar/companies | Semantic similarity matches | Journalist |
+
+### LLM Insights (Phase 5)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /matches/insights/journalist/{id} | LLM insights for journalist match | Company |
+| GET | /matches/insights/company/{id} | LLM insights for company match | Journalist |
+
+### Profiles
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET/POST/PUT | /journalists/me | Journalist profile management | Journalist |
+| GET/POST/PUT | /companies/me | Company profile management | Company |
+| GET | /journalists/{id} | View journalist public profile | Any user |
+| GET | /companies/{id} | View company public profile | Any user |
+
+### Topics & Users
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /topics/ | List all topics | No |
+| POST | /topics/ | Create topic | Admin |
 | GET | /users/me | Get current user | Yes |
-| GET | /users/{id} | Get user by ID | Yes (self or admin) |
-| GET | /users/ | List all users | Yes (admin only) |
-| GET | /health | Health check | No |
+| GET | /users/ | List all users | Admin |
+
+### Feedback (Phase 6)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | /feedback/ | Submit match feedback | Yes |
+| GET | /feedback/me | Get your feedback history | Yes |
+| GET | /feedback/stats | Platform feedback stats | Admin |
+
+### Analytics (Phase 6)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /analytics/me | Get your engagement metrics | Yes |
+| GET | /analytics/platform | Platform-wide metrics | Admin |
+
+## Matching Philosophy
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Phase 3: Deterministic Matching                    │
+│  - Exact topic overlap                              │
+│  - Hard rules (accepting pitches, active)           │
+│  - 100% explainable                                 │
+└─────────────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Phase 4: Similarity Matching                       │
+│  - Semantic similarity via embeddings               │
+│  - Discovers related content beyond exact matches   │
+│  - Similarity scores for ranking                    │
+└─────────────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Phase 5: LLM-Assisted (Complete)                   │
+│  - AI advises, never decides                        │
+│  - Human-readable explanations                      │
+│  - Pitch angle suggestions                          │
+│  - Risk flagging with recommendations               │
+└─────────────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Phase 6: Continuous Refinement (Complete)          │
+│  - Feedback loops for match quality                 │
+│  - User and platform analytics                      │
+│  - Helpfulness metrics                              │
+└─────────────────────────────────────────────────────┘
+```
 
 ## Roadmap
 
 1. ~~Core platform & identity~~ (Phase 1 - Complete)
-2. Structured data capture (Phase 2)
-3. Deterministic matchmaking (Phase 3)
-4. Embedding-based discovery (Phase 4)
-5. LLM-assisted reasoning (Phase 5)
-6. Continuous refinement (Phase 6)
+2. ~~Structured data capture~~ (Phase 2 - Complete)
+3. ~~Deterministic matchmaking~~ (Phase 3 - Complete)
+4. ~~Embedding-based discovery~~ (Phase 4 - Complete)
+5. ~~LLM-assisted reasoning~~ (Phase 5 - Complete)
+6. ~~Continuous refinement~~ (Phase 6 - Complete)
+
+## All Phases Complete
+
+The Editorial PR Matchmaking Platform is feature-complete with:
+- 107 passing tests
+- Full API coverage across all endpoints
+- Journalist-first matching philosophy enforced
+- AI advises, never decides principle maintained

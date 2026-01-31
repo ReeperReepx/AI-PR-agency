@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Editorial PR Matchmaking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-lg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      padding: var(--space-2xl);
+    }
+
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+    }
+
+    .auth-logo svg {
+      width: 40px;
+      height: 40px;
+      color: var(--primary);
+    }
+
+    .auth-logo span {
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    .auth-title {
+      text-align: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .auth-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: var(--space-xl);
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: var(--space-lg);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .auth-footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .form-error {
+      color: var(--danger);
+      font-size: 0.8125rem;
+      margin-top: var(--space-xs);
+      display: none;
+    }
+
+    .form-input.error {
+      border-color: var(--danger);
+    }
+
+    .form-input.error + .form-error {
+      display: block;
+    }
+
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: var(--space-md);
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: var(--space-xs);
+    }
+
+    .user-type-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .user-type-option {
+      padding: var(--space-lg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .user-type-option:hover {
+      border-color: var(--primary-light);
+      background: rgba(91, 95, 199, 0.02);
+    }
+
+    .user-type-option.selected {
+      border-color: var(--primary);
+      background: rgba(91, 95, 199, 0.05);
+    }
+
+    .user-type-option input {
+      display: none;
+    }
+
+    .user-type-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto var(--space-md);
+      color: var(--text-muted);
+    }
+
+    .user-type-option.selected .user-type-icon {
+      color: var(--primary);
+    }
+
+    .user-type-label {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: var(--space-xs);
+    }
+
+    .user-type-desc {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .password-requirements {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: var(--space-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>PR Match</span>
+      </div>
+
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-subtitle">Join the platform to connect with journalists and companies</p>
+
+      <form id="register-form">
+        <div class="form-group">
+          <label class="form-label">I am a...</label>
+          <div class="user-type-selector">
+            <label class="user-type-option selected" onclick="selectUserType(this, 'journalist')">
+              <input type="radio" name="user_type" value="journalist" checked>
+              <svg class="user-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+              <div class="user-type-label">Journalist</div>
+              <div class="user-type-desc">Looking for story sources</div>
+            </label>
+
+            <label class="user-type-option" onclick="selectUserType(this, 'company')">
+              <input type="radio" name="user_type" value="company">
+              <svg class="user-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <div class="user-type-label">Company</div>
+              <div class="user-type-desc">Looking for press coverage</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input type="email" id="email" name="email" class="form-input" placeholder="you@company.com" required>
+          <span class="form-error">Please enter a valid email address</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="password" name="password" class="form-input" placeholder="Create a password" required minlength="8">
+            <button type="button" class="password-toggle" onclick="togglePassword()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          <p class="password-requirements">Must be at least 8 characters</p>
+          <span class="form-error">Password must be at least 8 characters</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Create Account
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="/login">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    let selectedUserType = 'journalist';
+
+    function selectUserType(element, type) {
+      document.querySelectorAll('.user-type-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      element.classList.add('selected');
+      selectedUserType = type;
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('password');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+
+      try {
+        await window.app.auth.register(email, password, selectedUserType);
+        window.app.ui.showAlert('Account created! Signing you in...', 'success');
+
+        // Auto-login after registration
+        await window.app.auth.login(email, password);
+        window.location.href = '/dashboard';
+      } catch (error) {
+        window.app.ui.showAlert(error.message || 'Registration failed', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+      }
+    });
+  </script>
+</body>
+</html>
