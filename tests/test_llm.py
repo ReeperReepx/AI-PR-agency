@@ -97,12 +97,12 @@ class TestLLMProvider:
 class TestLLMService:
     """Tests for LLM service layer."""
 
-    def test_get_llm_provider_returns_mock(self):
-        """Service returns mock provider by default."""
+    def test_get_llm_provider_returns_configured_provider(self):
+        """Service returns configured provider (mock or deepseek)."""
         from src.llm.service import get_llm_provider
 
         provider = get_llm_provider()
-        assert provider.provider_name == "mock"
+        assert provider.provider_name in ("mock", "deepseek")
 
     def test_provider_is_cached(self):
         """Provider is cached for efficiency."""
@@ -111,6 +111,72 @@ class TestLLMService:
         provider1 = get_llm_provider()
         provider2 = get_llm_provider()
         assert provider1 is provider2
+
+
+class TestDeepSeekProvider:
+    """Tests for DeepSeek LLM provider."""
+
+    def test_deepseek_provider_has_correct_name(self):
+        """DeepSeek provider identifies itself correctly."""
+        from src.llm.deepseek import DeepSeekProvider
+
+        provider = DeepSeekProvider()
+        assert provider.provider_name == "deepseek"
+
+    def test_deepseek_explain_match_with_fallback(self):
+        """DeepSeek explain_match works with fallback when API unavailable."""
+        from src.llm.deepseek import DeepSeekProvider
+
+        provider = DeepSeekProvider()
+        explanation = provider.explain_match(
+            company_name="TechCorp",
+            company_description="AI-powered analytics",
+            company_topics=["AI/ML"],
+            journalist_name="Jane Reporter",
+            journalist_beat="Technology",
+            journalist_topics=["AI/ML"],
+            matched_topics=["AI/ML"],
+        )
+
+        # Should return valid data even with fallback
+        assert explanation.summary
+        assert len(explanation.relevance_points) > 0
+        assert explanation.confidence in ("high", "medium", "low")
+
+    def test_deepseek_pitch_angles_with_fallback(self):
+        """DeepSeek pitch angles work with fallback when API unavailable."""
+        from src.llm.deepseek import DeepSeekProvider
+
+        provider = DeepSeekProvider()
+        angles = provider.suggest_pitch_angles(
+            company_name="TechCorp",
+            company_description="AI-powered analytics",
+            journalist_name="Jane Reporter",
+            journalist_beat="Technology",
+            matched_topics=["AI/ML"],
+            num_angles=2,
+        )
+
+        assert len(angles) == 2
+        for angle in angles:
+            assert angle.headline
+            assert angle.hook
+
+    def test_deepseek_risk_assessment_with_fallback(self):
+        """DeepSeek risk assessment works with fallback when API unavailable."""
+        from src.llm.deepseek import DeepSeekProvider
+
+        provider = DeepSeekProvider()
+        risk = provider.assess_risk(
+            company_name="TechCorp",
+            company_description="AI-powered analytics",
+            journalist_name="Jane Reporter",
+            journalist_outlet="Tech News",
+            journalist_beat="Technology",
+        )
+
+        assert risk.risk_level in ("low", "medium", "high")
+        assert len(risk.recommendations) > 0
 
 
 class TestJournalistInsightsEndpoint:
@@ -133,7 +199,7 @@ class TestJournalistInsightsEndpoint:
         # Check explanation
         assert "explanation" in data
         assert data["explanation"]["summary"]
-        assert data["explanation"]["provider"] == "mock"
+        assert data["explanation"]["provider"] in ("mock", "deepseek")
 
         # Check pitch angles
         assert "pitch_angles" in data
@@ -199,7 +265,7 @@ class TestCompanyInsightsEndpoint:
         assert "risk_assessment" in data
 
         # Provider should be identified
-        assert data["explanation"]["provider"] == "mock"
+        assert data["explanation"]["provider"] in ("mock", "deepseek")
 
     def test_company_cannot_get_company_insights(self, client, company_with_profile):
         """Companies cannot get company insights (only journalists can)."""

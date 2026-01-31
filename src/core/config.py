@@ -24,5 +24,11 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
+    # LLM Provider
+    llm_provider: str = "deepseek"  # "mock" or "deepseek"
+    deepseek_api_key: str = "sk-9dcec6f9cccb4200a10584a1b6f53ee4"
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-chat"
+
 
 settings = Settings()

@@ -26,12 +26,15 @@ def get_llm_provider() -> LLMProvider:
     """
     Get the configured LLM provider.
 
-    Currently returns mock provider. In production, this would
-    check configuration and return the appropriate provider.
+    Returns the provider based on settings.llm_provider:
+    - "deepseek": DeepSeek API (default)
+    - "mock": Mock provider for testing
     """
-    # For Phase 5, we use mock provider only
-    # Future: check settings.llm_provider and return appropriate provider
-    return MockLLMProvider()
+    if settings.llm_provider == "deepseek":
+        from src.llm.deepseek import DeepSeekProvider
+        return DeepSeekProvider()
+    else:
+        return MockLLMProvider()
 
 
 def explain_journalist_match(
