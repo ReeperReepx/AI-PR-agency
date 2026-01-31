@@ -68,7 +68,14 @@ def create_my_profile(
             detail="Profile already exists. Use PUT to update.",
         )
 
-    return create_profile(db, current_user.id, profile_data)
+    profile = create_profile(db, current_user.id, profile_data)
+
+    # Generate embedding for similarity search
+    from src.embeddings.service import upsert_company_embedding
+
+    upsert_company_embedding(db, profile)
+
+    return profile
 
 
 @router.put("/me", response_model=CompanyProfileResponse)
@@ -87,7 +94,14 @@ def update_my_profile(
             detail="Profile not found. Create one first.",
         )
 
-    return update_profile(db, profile, update_data)
+    updated_profile = update_profile(db, profile, update_data)
+
+    # Regenerate embedding for similarity search
+    from src.embeddings.service import upsert_company_embedding
+
+    upsert_company_embedding(db, updated_profile)
+
+    return updated_profile
 
 
 @router.get("/{profile_id}", response_model=CompanyProfilePublic)

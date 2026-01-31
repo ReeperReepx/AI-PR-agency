@@ -11,12 +11,13 @@ A journalist-first PR matchmaking platform that only connects companies and jour
 
 ## Current Phase
 
-**Phase 3: Deterministic Matchmaking** (Complete)
+**Phase 4: Embedding-based Discovery** (Complete)
 
-- Topic-based matching: companies find journalists with overlapping topics
-- Hard rules: only journalists accepting pitches, only active companies
-- Explainable results: every match includes why it exists
-- Bidirectional: companies search journalists, journalists search companies
+- Semantic similarity matching using sentence-transformers
+- Profile embeddings auto-generated on create/update
+- New `/matches/similar/*` endpoints for similarity search
+- Similarity scores in match results
+- Graceful fallback when model unavailable
 
 ## Project Structure
 
@@ -28,11 +29,11 @@ src/
 ├── topics/         # Shared taxonomy
 ├── journalists/    # Journalist profiles
 ├── companies/      # Company profiles
-├── matching/       # Deterministic matchmaking
-│   ├── rules.py    # Pure matching functions
-│   ├── schemas.py  # Match result schemas
-│   ├── router.py   # Match endpoints
-│   └── service.py  # Match orchestration
+├── matching/       # Deterministic + similarity matching
+├── embeddings/     # Embedding generation & storage
+│   ├── generator.py  # sentence-transformers integration
+│   ├── models.py     # ProfileEmbedding storage
+│   └── service.py    # Embedding CRUD & similarity search
 └── main.py         # FastAPI application
 ```
 
@@ -57,73 +58,59 @@ pytest tests/ -v
 | POST | /auth/register | Register a new user | No |
 | POST | /auth/login | Get access token | No |
 
-### Users
+### Matching (Deterministic)
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | /users/me | Get current user | Yes |
-| GET | /users/{id} | Get user by ID | Yes (self/admin) |
-| GET | /users/ | List all users | Admin |
+| GET | /matches/journalists | Topic-based journalist matches | Company |
+| GET | /matches/companies | Topic-based company matches | Journalist |
 
-### Topics
+### Matching (Similarity)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /matches/similar/journalists | Semantic similarity matches | Company |
+| GET | /matches/similar/companies | Semantic similarity matches | Journalist |
+
+### Profiles
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET/POST/PUT | /journalists/me | Journalist profile management | Journalist |
+| GET/POST/PUT | /companies/me | Company profile management | Company |
+| GET | /journalists/{id} | View journalist public profile | Any user |
+| GET | /companies/{id} | View company public profile | Any user |
+
+### Topics & Users
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | GET | /topics/ | List all topics | No |
 | POST | /topics/ | Create topic | Admin |
+| GET | /users/me | Get current user | Yes |
+| GET | /users/ | List all users | Admin |
 
-### Journalist Profiles
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | /journalists/me | Get own profile | Journalist |
-| POST | /journalists/me | Create profile | Journalist |
-| PUT | /journalists/me | Update profile | Journalist |
-| GET | /journalists/{id} | View public profile | Any user |
-
-### Company Profiles
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | /companies/me | Get own profile | Company |
-| POST | /companies/me | Create profile | Company |
-| PUT | /companies/me | Update profile | Company |
-| GET | /companies/{id} | View public profile | Any user |
-
-### Matching
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | /matches/journalists | Find matching journalists | Company |
-| GET | /matches/companies | Find matching companies | Journalist |
-
-### Health
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | /health | Health check | No |
-
-## Matching Logic
-
-Matches are **deterministic** and **explainable**:
+## Matching Philosophy
 
 ```
-Company requests matches
-        │
-        ▼
-┌─────────────────────────┐
-│ 1. Company has topics?  │ → No profile/topics = helpful error
-└─────────────────────────┘
-        │ Yes
-        ▼
-┌─────────────────────────┐
-│ 2. Find journalists     │
-│    with topic overlap   │
-│    AND accepting pitches│
-└─────────────────────────┘
-        │
-        ▼
-┌─────────────────────────┐
-│ 3. Return with reason:  │
-│    "Jane at TechNews    │
-│    covers AI, which     │
-│    aligns with Acme's   │
-│    expertise."          │
-└─────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  Phase 3: Deterministic Matching                    │
+│  - Exact topic overlap                              │
+│  - Hard rules (accepting pitches, active)           │
+│  - 100% explainable                                 │
+└─────────────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Phase 4: Similarity Matching                       │
+│  - Semantic similarity via embeddings               │
+│  - Discovers related content beyond exact matches   │
+│  - Similarity scores for ranking                    │
+└─────────────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Phase 5: LLM-Assisted (Coming)                     │
+│  - AI advises, never decides                        │
+│  - Human-readable explanations                      │
+│  - Risk flagging                                    │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Roadmap
@@ -131,6 +118,6 @@ Company requests matches
 1. ~~Core platform & identity~~ (Phase 1 - Complete)
 2. ~~Structured data capture~~ (Phase 2 - Complete)
 3. ~~Deterministic matchmaking~~ (Phase 3 - Complete)
-4. Embedding-based discovery (Phase 4)
+4. ~~Embedding-based discovery~~ (Phase 4 - Complete)
 5. LLM-assisted reasoning (Phase 5)
 6. Continuous refinement (Phase 6)

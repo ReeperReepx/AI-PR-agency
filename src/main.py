@@ -1,7 +1,7 @@
 """
 FastAPI application entry point.
 
-Editorial PR Matchmaking Platform - Phase 3: Deterministic matchmaking
+Editorial PR Matchmaking Platform - Phase 4: Embedding-based discovery
 """
 
 from contextlib import asynccontextmanager
@@ -20,6 +20,7 @@ from src.users.router import router as users_router
 
 # Import models to register them with SQLAlchemy
 from src.companies.models import CompanyProfile  # noqa: F401
+from src.embeddings.models import ProfileEmbedding  # noqa: F401
 from src.journalists.models import JournalistProfile  # noqa: F401
 from src.topics.models import Topic  # noqa: F401
 
@@ -43,7 +44,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     description="Journalist-first PR matchmaking platform. High-signal, trust-based editorial connections.",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -59,4 +60,4 @@ app.include_router(matching_router)
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "phase": "3 - Deterministic matchmaking"}
+    return {"status": "healthy", "phase": "4 - Embedding-based discovery"}
