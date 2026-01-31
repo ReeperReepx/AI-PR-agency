@@ -12,6 +12,7 @@ from sqlalchemy.pool import StaticPool
 
 from src.core.database import Base, get_db
 from src.main import app
+from src.topics.service import seed_topics
 
 
 # In-memory SQLite for tests
@@ -35,23 +36,22 @@ def override_get_db():
 
 
 @pytest.fixture(scope="function")
-def db():
-    """Create a fresh database for each test."""
+def db_session():
+    """Create a fresh database session for each test."""
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
+    seed_topics(db)
     yield db
     db.close()
     Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
-def client(db):
+def client(db_session):
     """Create a test client with the test database."""
     app.dependency_overrides[get_db] = override_get_db
-    Base.metadata.create_all(bind=engine)
     with TestClient(app) as test_client:
         yield test_client
-    Base.metadata.drop_all(bind=engine)
     app.dependency_overrides.clear()
 
 
@@ -119,3 +119,64 @@ def admin_user(client):
     token = login_response.json()["access_token"]
 
     return {"user": user, "token": token}
+
+
+@pytest.fixture
+def journalist_with_profile(client, journalist_user):
+    """Create a journalist user with a complete profile."""
+    # Get a topic ID
+    topics_response = client.get("/topics/")
+    topic_id = topics_response.json()[0]["id"]
+
+    profile_response = client.post(
+        "/journalists/me",
+        json={
+            "full_name": "Test Journalist",
+            "bio": "A test journalist for testing",
+            "outlet_name": "Test News",
+            "outlet_type": "online",
+            "beat_description": "Testing and quality assurance in software",
+            "min_pitch_notice_days": 3,
+            "preferred_contact_method": "email",
+            "is_accepting_pitches": True,
+            "topic_ids": [topic_id],
+        },
+        headers={"Authorization": f"Bearer {journalist_user['token']}"},
+    )
+    profile = profile_response.json()
+
+    return {
+        "user": journalist_user["user"],
+        "token": journalist_user["token"],
+        "profile": profile,
+    }
+
+
+@pytest.fixture
+def company_with_profile(client, company_user):
+    """Create a company user with a complete profile."""
+    # Get a topic ID
+    topics_response = client.get("/topics/")
+    topic_id = topics_response.json()[0]["id"]
+
+    profile_response = client.post(
+        "/companies/me",
+        json={
+            "company_name": "Test Company",
+            "description": "A test company for testing",
+            "website": "https://test.example.com",
+            "industry": "Technology",
+            "company_size": "startup",
+            "founded_year": 2020,
+            "headquarters": "Test City",
+            "topic_ids": [topic_id],
+        },
+        headers={"Authorization": f"Bearer {company_user['token']}"},
+    )
+    profile = profile_response.json()
+
+    return {
+        "user": company_user["user"],
+        "token": company_user["token"],
+        "profile": profile,
+    }
