@@ -11,13 +11,14 @@ A journalist-first PR matchmaking platform that only connects companies and jour
 
 ## Current Phase
 
-**Phase 4: Embedding-based Discovery** (Complete)
+**Phase 5: LLM-Assisted Reasoning** (Complete)
 
-- Semantic similarity matching using sentence-transformers
-- Profile embeddings auto-generated on create/update
-- New `/matches/similar/*` endpoints for similarity search
-- Similarity scores in match results
-- Graceful fallback when model unavailable
+- LLM provider abstraction with mock implementation
+- Match explanation with relevance points and suggested approach
+- Pitch angle suggestions tailored to journalist/company pairs
+- Risk assessment with recommendations
+- New `/matches/insights/*` endpoints
+- AI advises, never decides principle enforced
 
 ## Project Structure
 
@@ -34,6 +35,11 @@ src/
 │   ├── generator.py  # sentence-transformers integration
 │   ├── models.py     # ProfileEmbedding storage
 │   └── service.py    # Embedding CRUD & similarity search
+├── llm/            # LLM-assisted reasoning (Phase 5)
+│   ├── provider.py   # Abstract LLM provider interface
+│   ├── mock.py       # Mock provider for testing
+│   ├── service.py    # LLM orchestration
+│   └── schemas.py    # API response schemas
 └── main.py         # FastAPI application
 ```
 
@@ -69,6 +75,12 @@ pytest tests/ -v
 |--------|----------|-------------|------|
 | GET | /matches/similar/journalists | Semantic similarity matches | Company |
 | GET | /matches/similar/companies | Semantic similarity matches | Journalist |
+
+### LLM Insights (Phase 5)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /matches/insights/journalist/{id} | LLM insights for journalist match | Company |
+| GET | /matches/insights/company/{id} | LLM insights for company match | Journalist |
 
 ### Profiles
 | Method | Endpoint | Description | Auth |
@@ -106,10 +118,19 @@ pytest tests/ -v
                       │
                       ▼
 ┌─────────────────────────────────────────────────────┐
-│  Phase 5: LLM-Assisted (Coming)                     │
+│  Phase 5: LLM-Assisted (Complete)                   │
 │  - AI advises, never decides                        │
 │  - Human-readable explanations                      │
-│  - Risk flagging                                    │
+│  - Pitch angle suggestions                          │
+│  - Risk flagging with recommendations               │
+└─────────────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Phase 6: Continuous Refinement (Coming)            │
+│  - Feedback loops                                   │
+│  - Analytics and metrics                            │
+│  - Performance optimization                         │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -119,5 +140,5 @@ pytest tests/ -v
 2. ~~Structured data capture~~ (Phase 2 - Complete)
 3. ~~Deterministic matchmaking~~ (Phase 3 - Complete)
 4. ~~Embedding-based discovery~~ (Phase 4 - Complete)
-5. LLM-assisted reasoning (Phase 5)
+5. ~~LLM-assisted reasoning~~ (Phase 5 - Complete)
 6. Continuous refinement (Phase 6)

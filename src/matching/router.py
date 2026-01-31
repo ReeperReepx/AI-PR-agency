@@ -10,6 +10,13 @@ from sqlalchemy.orm import Session
 
 from src.auth.service import get_current_user
 from src.core.database import get_db
+from src.llm.schemas import (
+    LLMInsightsResponse,
+    MatchExplanationResponse,
+    PitchAngleResponse,
+    PitchAnglesResponse,
+    RiskAssessmentResponse,
+)
 from src.matching.schemas import (
     MatchResults,
     SimilarCompanyMatch,
@@ -227,3 +234,182 @@ def get_similar_companies(
     ]
 
     return SimilarMatchResults(matches=matches, total=len(matches))
+
+
+# LLM-assisted insights (Phase 5)
+
+
+@router.get("/insights/journalist/{journalist_id}", response_model=LLMInsightsResponse)
+def get_journalist_insights(
+    journalist_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get LLM-assisted insights for a journalist match.
+
+    Returns:
+    - Rich explanation of why this is a good match
+    - Suggested pitch angles tailored to this journalist
+    - Risk assessment with recommendations
+
+    Note: AI advises, never decides. These are suggestions to inform
+    human judgment, not automated actions.
+    """
+    if current_user.user_type != UserType.company:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only companies can get journalist insights",
+        )
+
+    from src.companies.service import get_profile_by_user_id as get_company_profile
+    from src.journalists.service import get_profile_by_id as get_journalist_profile
+    from src.llm.service import (
+        assess_match_risk,
+        explain_journalist_match,
+        get_llm_provider,
+        suggest_angles_for_match,
+    )
+    from src.matching.rules import is_match
+
+    company = get_company_profile(db, current_user.id)
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Create a company profile first",
+        )
+
+    journalist = get_journalist_profile(db, journalist_id)
+    if not journalist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Journalist not found",
+        )
+
+    # Get matched topics
+    _, matched_topics = is_match(company, journalist)
+    matched_topic_names = [t.name for t in matched_topics]
+
+    # Get LLM insights
+    provider = get_llm_provider()
+
+    explanation = explain_journalist_match(db, company, journalist, matched_topic_names)
+    angles = suggest_angles_for_match(company, journalist, matched_topic_names)
+    risk = assess_match_risk(company, journalist)
+
+    return LLMInsightsResponse(
+        explanation=MatchExplanationResponse(
+            summary=explanation.summary,
+            relevance_points=explanation.relevance_points,
+            potential_angles=explanation.potential_angles,
+            suggested_approach=explanation.suggested_approach,
+            confidence=explanation.confidence,
+            provider=provider.provider_name,
+        ),
+        pitch_angles=PitchAnglesResponse(
+            angles=[
+                PitchAngleResponse(
+                    headline=a.headline,
+                    hook=a.hook,
+                    why_now=a.why_now,
+                    key_points=a.key_points,
+                )
+                for a in angles
+            ],
+            provider=provider.provider_name,
+        ),
+        risk_assessment=RiskAssessmentResponse(
+            risk_level=risk.risk_level,
+            flags=risk.flags,
+            recommendations=risk.recommendations,
+            provider=provider.provider_name,
+        ),
+    )
+
+
+@router.get("/insights/company/{company_id}", response_model=LLMInsightsResponse)
+def get_company_insights(
+    company_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get LLM-assisted insights for a company match.
+
+    Returns:
+    - Rich explanation of why this company is relevant
+    - Potential story angles
+    - Assessment of the company's pitch potential
+
+    Note: AI advises, never decides. These are suggestions to inform
+    human judgment, not automated actions.
+    """
+    if current_user.user_type != UserType.journalist:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only journalists can get company insights",
+        )
+
+    from src.companies.service import get_profile_by_id as get_company_profile
+    from src.journalists.service import get_profile_by_user_id as get_journalist_profile
+    from src.llm.service import (
+        assess_match_risk,
+        explain_company_match,
+        get_llm_provider,
+        suggest_angles_for_match,
+    )
+    from src.matching.rules import is_match
+
+    journalist = get_journalist_profile(db, current_user.id)
+    if not journalist:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Create a journalist profile first",
+        )
+
+    company = get_company_profile(db, company_id)
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Company not found",
+        )
+
+    # Get matched topics
+    _, matched_topics = is_match(company, journalist)
+    matched_topic_names = [t.name for t in matched_topics]
+
+    # Get LLM insights
+    provider = get_llm_provider()
+
+    explanation = explain_company_match(db, journalist, company, matched_topic_names)
+    angles = suggest_angles_for_match(company, journalist, matched_topic_names)
+    risk = assess_match_risk(company, journalist)
+
+    return LLMInsightsResponse(
+        explanation=MatchExplanationResponse(
+            summary=explanation.summary,
+            relevance_points=explanation.relevance_points,
+            potential_angles=explanation.potential_angles,
+            suggested_approach=explanation.suggested_approach,
+            confidence=explanation.confidence,
+            provider=provider.provider_name,
+        ),
+        pitch_angles=PitchAnglesResponse(
+            angles=[
+                PitchAngleResponse(
+                    headline=a.headline,
+                    hook=a.hook,
+                    why_now=a.why_now,
+                    key_points=a.key_points,
+                )
+                for a in angles
+            ],
+            provider=provider.provider_name,
+        ),
+        risk_assessment=RiskAssessmentResponse(
+            risk_level=risk.risk_level,
+            flags=risk.flags,
+            recommendations=risk.recommendations,
+            provider=provider.provider_name,
+        ),
+    )

@@ -1,7 +1,7 @@
 """
 FastAPI application entry point.
 
-Editorial PR Matchmaking Platform - Phase 4: Embedding-based discovery
+Editorial PR Matchmaking Platform - Phase 5: LLM-assisted reasoning
 """
 
 from contextlib import asynccontextmanager
@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     description="Journalist-first PR matchmaking platform. High-signal, trust-based editorial connections.",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 
@@ -60,4 +60,4 @@ app.include_router(matching_router)
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "phase": "4 - Embedding-based discovery"}
+    return {"status": "healthy", "phase": "5 - LLM-assisted reasoning"}
