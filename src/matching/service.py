@@ -2,9 +2,10 @@
 Matching service for finding journalist-company matches.
 
 Orchestrates the matching rules and returns explainable results.
+Uses eager loading to avoid N+1 queries on topic relationships.
 """
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from src.companies.models import CompanyProfile
 from src.companies.service import get_profile_by_user_id as get_company_profile
@@ -30,9 +31,10 @@ def find_journalists_for_company(
     if not company:
         return [], 0
 
-    # Get all journalists who are accepting pitches
+    # Get all journalists who are accepting pitches with topics eagerly loaded
     journalists = (
         db.query(JournalistProfile)
+        .options(selectinload(JournalistProfile.topics))
         .filter(JournalistProfile.is_accepting_pitches.is_(True))
         .all()
     )
@@ -76,9 +78,10 @@ def find_companies_for_journalist(
     if not journalist:
         return [], 0
 
-    # Get all active companies
+    # Get all active companies with topics eagerly loaded
     companies = (
         db.query(CompanyProfile)
+        .options(selectinload(CompanyProfile.topics))
         .filter(CompanyProfile.is_active.is_(True))
         .all()
     )

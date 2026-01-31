@@ -35,6 +35,41 @@ def override_get_db():
         db.close()
 
 
+# --- Helper Functions ---
+
+
+def create_test_user(client: TestClient, user_type: str) -> dict:
+    """
+    Create a test user of the specified type and return user data with token.
+
+    Args:
+        client: Test client instance
+        user_type: One of "journalist", "company", or "admin"
+
+    Returns:
+        Dict with "user" data and "token" for authentication
+    """
+    email = f"{user_type}@example.com"
+    password = "securepass123"
+
+    response = client.post(
+        "/auth/register",
+        json={"email": email, "password": password, "user_type": user_type},
+    )
+    user = response.json()
+
+    login_response = client.post(
+        "/auth/login",
+        json={"email": email, "password": password},
+    )
+    token = login_response.json()["access_token"]
+
+    return {"user": user, "token": token}
+
+
+# --- Database Fixtures ---
+
+
 @pytest.fixture(scope="function")
 def db_session():
     """Create a fresh database session for each test."""
@@ -55,70 +90,25 @@ def client(db_session):
     app.dependency_overrides.clear()
 
 
+# --- User Fixtures ---
+
+
 @pytest.fixture
 def journalist_user(client):
     """Create and return a journalist user with token."""
-    response = client.post(
-        "/auth/register",
-        json={
-            "email": "journalist@example.com",
-            "password": "securepass123",
-            "user_type": "journalist",
-        },
-    )
-    user = response.json()
-
-    login_response = client.post(
-        "/auth/login",
-        json={"email": "journalist@example.com", "password": "securepass123"},
-    )
-    token = login_response.json()["access_token"]
-
-    return {"user": user, "token": token}
+    return create_test_user(client, "journalist")
 
 
 @pytest.fixture
 def company_user(client):
     """Create and return a company user with token."""
-    response = client.post(
-        "/auth/register",
-        json={
-            "email": "company@example.com",
-            "password": "securepass123",
-            "user_type": "company",
-        },
-    )
-    user = response.json()
-
-    login_response = client.post(
-        "/auth/login",
-        json={"email": "company@example.com", "password": "securepass123"},
-    )
-    token = login_response.json()["access_token"]
-
-    return {"user": user, "token": token}
+    return create_test_user(client, "company")
 
 
 @pytest.fixture
 def admin_user(client):
     """Create and return an admin user with token."""
-    response = client.post(
-        "/auth/register",
-        json={
-            "email": "admin@example.com",
-            "password": "securepass123",
-            "user_type": "admin",
-        },
-    )
-    user = response.json()
-
-    login_response = client.post(
-        "/auth/login",
-        json={"email": "admin@example.com", "password": "securepass123"},
-    )
-    token = login_response.json()["access_token"]
-
-    return {"user": user, "token": token}
+    return create_test_user(client, "admin")
 
 
 @pytest.fixture

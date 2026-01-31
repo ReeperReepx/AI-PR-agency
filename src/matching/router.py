@@ -9,7 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from src.auth.service import get_current_user
+from src.companies.models import CompanyProfile
 from src.core.database import get_db
+from src.journalists.models import JournalistProfile
 from src.llm.schemas import (
     LLMInsightsResponse,
     MatchExplanationResponse,
@@ -27,6 +29,65 @@ from src.matching.service import find_companies_for_journalist, find_journalists
 from src.users.models import User, UserType
 
 router = APIRouter(prefix="/matches", tags=["matching"])
+
+
+def _build_insights_response(
+    db: Session,
+    company: CompanyProfile,
+    journalist: JournalistProfile,
+) -> LLMInsightsResponse:
+    """
+    Build LLM insights response for a company-journalist pair.
+
+    Extracted common logic for both insight endpoints.
+    """
+    from src.llm.service import (
+        assess_match_risk,
+        explain_journalist_match,
+        get_llm_provider,
+        suggest_angles_for_match,
+    )
+    from src.matching.rules import is_match
+
+    # Get matched topics
+    _, matched_topics = is_match(company, journalist)
+    matched_topic_names = [t.name for t in matched_topics]
+
+    # Get LLM insights
+    provider = get_llm_provider()
+
+    explanation = explain_journalist_match(db, company, journalist, matched_topic_names)
+    angles = suggest_angles_for_match(company, journalist, matched_topic_names)
+    risk = assess_match_risk(company, journalist)
+
+    return LLMInsightsResponse(
+        explanation=MatchExplanationResponse(
+            summary=explanation.summary,
+            relevance_points=explanation.relevance_points,
+            potential_angles=explanation.potential_angles,
+            suggested_approach=explanation.suggested_approach,
+            confidence=explanation.confidence,
+            provider=provider.provider_name,
+        ),
+        pitch_angles=PitchAnglesResponse(
+            angles=[
+                PitchAngleResponse(
+                    headline=a.headline,
+                    hook=a.hook,
+                    why_now=a.why_now,
+                    key_points=a.key_points,
+                )
+                for a in angles
+            ],
+            provider=provider.provider_name,
+        ),
+        risk_assessment=RiskAssessmentResponse(
+            risk_level=risk.risk_level,
+            flags=risk.flags,
+            recommendations=risk.recommendations,
+            provider=provider.provider_name,
+        ),
+    )
 
 
 @router.get("/journalists", response_model=MatchResults)
@@ -264,13 +325,6 @@ def get_journalist_insights(
 
     from src.companies.service import get_profile_by_user_id as get_company_profile
     from src.journalists.service import get_profile_by_id as get_journalist_profile
-    from src.llm.service import (
-        assess_match_risk,
-        explain_journalist_match,
-        get_llm_provider,
-        suggest_angles_for_match,
-    )
-    from src.matching.rules import is_match
 
     company = get_company_profile(db, current_user.id)
     if not company:
@@ -286,45 +340,7 @@ def get_journalist_insights(
             detail="Journalist not found",
         )
 
-    # Get matched topics
-    _, matched_topics = is_match(company, journalist)
-    matched_topic_names = [t.name for t in matched_topics]
-
-    # Get LLM insights
-    provider = get_llm_provider()
-
-    explanation = explain_journalist_match(db, company, journalist, matched_topic_names)
-    angles = suggest_angles_for_match(company, journalist, matched_topic_names)
-    risk = assess_match_risk(company, journalist)
-
-    return LLMInsightsResponse(
-        explanation=MatchExplanationResponse(
-            summary=explanation.summary,
-            relevance_points=explanation.relevance_points,
-            potential_angles=explanation.potential_angles,
-            suggested_approach=explanation.suggested_approach,
-            confidence=explanation.confidence,
-            provider=provider.provider_name,
-        ),
-        pitch_angles=PitchAnglesResponse(
-            angles=[
-                PitchAngleResponse(
-                    headline=a.headline,
-                    hook=a.hook,
-                    why_now=a.why_now,
-                    key_points=a.key_points,
-                )
-                for a in angles
-            ],
-            provider=provider.provider_name,
-        ),
-        risk_assessment=RiskAssessmentResponse(
-            risk_level=risk.risk_level,
-            flags=risk.flags,
-            recommendations=risk.recommendations,
-            provider=provider.provider_name,
-        ),
-    )
+    return _build_insights_response(db, company, journalist)
 
 
 @router.get("/insights/company/{company_id}", response_model=LLMInsightsResponse)
@@ -352,13 +368,6 @@ def get_company_insights(
 
     from src.companies.service import get_profile_by_id as get_company_profile
     from src.journalists.service import get_profile_by_user_id as get_journalist_profile
-    from src.llm.service import (
-        assess_match_risk,
-        explain_company_match,
-        get_llm_provider,
-        suggest_angles_for_match,
-    )
-    from src.matching.rules import is_match
 
     journalist = get_journalist_profile(db, current_user.id)
     if not journalist:
@@ -374,42 +383,4 @@ def get_company_insights(
             detail="Company not found",
         )
 
-    # Get matched topics
-    _, matched_topics = is_match(company, journalist)
-    matched_topic_names = [t.name for t in matched_topics]
-
-    # Get LLM insights
-    provider = get_llm_provider()
-
-    explanation = explain_company_match(db, journalist, company, matched_topic_names)
-    angles = suggest_angles_for_match(company, journalist, matched_topic_names)
-    risk = assess_match_risk(company, journalist)
-
-    return LLMInsightsResponse(
-        explanation=MatchExplanationResponse(
-            summary=explanation.summary,
-            relevance_points=explanation.relevance_points,
-            potential_angles=explanation.potential_angles,
-            suggested_approach=explanation.suggested_approach,
-            confidence=explanation.confidence,
-            provider=provider.provider_name,
-        ),
-        pitch_angles=PitchAnglesResponse(
-            angles=[
-                PitchAngleResponse(
-                    headline=a.headline,
-                    hook=a.hook,
-                    why_now=a.why_now,
-                    key_points=a.key_points,
-                )
-                for a in angles
-            ],
-            provider=provider.provider_name,
-        ),
-        risk_assessment=RiskAssessmentResponse(
-            risk_level=risk.risk_level,
-            flags=risk.flags,
-            recommendations=risk.recommendations,
-            provider=provider.provider_name,
-        ),
-    )
+    return _build_insights_response(db, company, journalist)

@@ -10,9 +10,7 @@ from src.journalists.models import JournalistProfile
 from src.topics.models import Topic
 
 
-def get_topic_overlap(
-    topics_a: list[Topic], topics_b: list[Topic]
-) -> list[Topic]:
+def get_topic_overlap(topics_a: list[Topic], topics_b: list[Topic]) -> list[Topic]:
     """
     Find overlapping topics between two lists.
 
