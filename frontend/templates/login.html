@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Editorial PR Matchmaking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-lg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      padding: var(--space-2xl);
+    }
+
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+    }
+
+    .auth-logo svg {
+      width: 40px;
+      height: 40px;
+      color: var(--primary);
+    }
+
+    .auth-logo span {
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    .auth-title {
+      text-align: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .auth-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: var(--space-xl);
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin: var(--space-lg) 0;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: var(--space-lg);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .auth-footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .form-error {
+      color: var(--danger);
+      font-size: 0.8125rem;
+      margin-top: var(--space-xs);
+      display: none;
+    }
+
+    .form-input.error {
+      border-color: var(--danger);
+    }
+
+    .form-input.error + .form-error {
+      display: block;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: var(--space-md);
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: var(--space-xs);
+    }
+
+    .password-wrapper {
+      position: relative;
+    }
+
+    .user-type-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+
+    .user-type-option {
+      padding: var(--space-md);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .user-type-option:hover {
+      border-color: var(--primary-light);
+    }
+
+    .user-type-option.selected {
+      border-color: var(--primary);
+      background: rgba(91, 95, 199, 0.05);
+    }
+
+    .user-type-option input {
+      display: none;
+    }
+
+    .user-type-icon {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto var(--space-sm);
+      color: var(--text-muted);
+    }
+
+    .user-type-option.selected .user-type-icon {
+      color: var(--primary);
+    }
+
+    .user-type-label {
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>PR Match</span>
+      </div>
+
+      <h1 class="auth-title">Welcome back</h1>
+      <p class="auth-subtitle">Sign in to your account to continue</p>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input type="email" id="email" name="email" class="form-input" placeholder="you@company.com" required>
+          <span class="form-error">Please enter a valid email address</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
+            <button type="button" class="password-toggle" onclick="togglePassword()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          <span class="form-error">Password is required</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Sign In
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="/register">Create one</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    function togglePassword() {
+      const input = document.getElementById('password');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+
+      try {
+        await window.app.auth.login(email, password);
+        window.location.href = '/dashboard';
+      } catch (error) {
+        window.app.ui.showAlert(error.message || 'Login failed', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

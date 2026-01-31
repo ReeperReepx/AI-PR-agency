@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% block title %}Matches - Editorial PR Matchmaking{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Your Matches</h1>
+    <p class="page-subtitle">Discover journalists and companies aligned with your interests</p>
+  </div>
+  <div class="flex gap-md items-center">
+    <div class="sync-indicator">
+      <span class="sync-dot"></span>
+      <span id="last-updated">Updated just now</span>
+    </div>
+    <button class="btn btn-primary" id="refresh-matches">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+      Refresh Matches
+    </button>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-lg">
+  <div class="flex gap-lg items-center">
+    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+      <label class="form-label">Search</label>
+      <input type="text" class="form-input" placeholder="Search by name, outlet, or topic..." id="search-input">
+    </div>
+    <div class="form-group" style="margin-bottom: 0; width: 200px;">
+      <label class="form-label">Min Match Score</label>
+      <select class="form-input" id="score-filter">
+        <option value="0">All Matches</option>
+        <option value="70">70%+</option>
+        <option value="80">80%+</option>
+        <option value="90">90%+</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 0; width: 200px;">
+      <label class="form-label">Sort By</label>
+      <select class="form-input" id="sort-filter">
+        <option value="score">Match Score</option>
+        <option value="name">Name</option>
+        <option value="recent">Recently Added</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Match Stats Summary -->
+<div class="stats-grid mb-lg">
+  <div class="stat-card">
+    <div class="stat-label">Total Matches</div>
+    <div class="stat-value" id="total-matches">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">High Quality (90%+)</div>
+    <div class="stat-value" id="high-quality">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Contacted</div>
+    <div class="stat-value" id="contacted">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Responded</div>
+    <div class="stat-value" id="responded">0</div>
+  </div>
+</div>
+
+<!-- Matches Grid -->
+<div id="matches-container">
+  <div class="grid-3" id="matches-grid">
+    <!-- Loading State -->
+    <div class="match-card">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-text"></div>
+      <div class="skeleton skeleton-text" style="width: 60%;"></div>
+    </div>
+    <div class="match-card">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-text"></div>
+      <div class="skeleton skeleton-text" style="width: 60%;"></div>
+    </div>
+    <div class="match-card">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-text"></div>
+      <div class="skeleton skeleton-text" style="width: 60%;"></div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" id="empty-state" style="display: none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <h3>No matches found</h3>
+    <p>Try adjusting your filters or complete your profile to get better matches.</p>
+    <button class="btn btn-primary" onclick="window.location.href='/profile'">
+      Update Profile
+    </button>
+  </div>
+</div>
+
+<!-- Pagination -->
+<div class="flex justify-between items-center mt-lg" id="pagination">
+  <div class="text-muted">
+    Showing <span id="showing-start">1</span>-<span id="showing-end">20</span> of <span id="total-results">0</span> results
+  </div>
+  <div class="flex gap-sm">
+    <button class="btn btn-secondary btn-sm" id="prev-page" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Previous
+    </button>
+    <button class="btn btn-secondary btn-sm" id="next-page">
+      Next
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Match Detail Modal -->
+<div class="modal-overlay" id="match-modal">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Match Details</h3>
+      <button class="btn btn-icon btn-secondary" onclick="window.app.modal.close('match-modal')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-content">
+      <!-- Content loaded dynamically -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="window.app.modal.close('match-modal')">Close</button>
+      <button class="btn btn-primary" id="modal-action">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13"></path>
+          <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+        </svg>
+        Get Insights
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let currentPage = 1;
+  const pageSize = 20;
+  let allMatches = [];
+
+  // Sample data for demonstration
+  const sampleMatches = [
+    {
+      id: '1',
+      name: 'Sarah Johnson',
+      outlet: 'TechCrunch',
+      role: 'Senior Tech Reporter',
+      score: 95,
+      topics: ['AI/ML', 'Startups', 'Funding'],
+      reason: 'Covers AI startups and frequently writes about Series A funding rounds. Strong alignment with your company focus.',
+      initials: 'SJ'
+    },
+    {
+      id: '2',
+      name: 'Michael Chen',
+      outlet: 'The Verge',
+      role: 'Business Editor',
+      score: 91,
+      topics: ['Enterprise', 'SaaS', 'Cloud'],
+      reason: 'Focuses on enterprise software trends and cloud computing innovations.',
+      initials: 'MC'
+    },
+    {
+      id: '3',
+      name: 'Emily Rodriguez',
+      outlet: 'Wired',
+      role: 'Senior Writer',
+      score: 88,
+      topics: ['AI Ethics', 'Tech Policy'],
+      reason: 'Writes in-depth features on AI governance and technology regulation.',
+      initials: 'ER'
+    },
+    {
+      id: '4',
+      name: 'David Kim',
+      outlet: 'Forbes',
+      role: 'Technology Columnist',
+      score: 85,
+      topics: ['Startups', 'VC'],
+      reason: 'Focuses on startup ecosystem and venture capital trends in tech.',
+      initials: 'DK'
+    },
+    {
+      id: '5',
+      name: 'Lisa Thompson',
+      outlet: 'Bloomberg Tech',
+      role: 'Staff Reporter',
+      score: 82,
+      topics: ['FinTech', 'Crypto', 'Payments'],
+      reason: 'Covers financial technology and digital payments space.',
+      initials: 'LT'
+    },
+    {
+      id: '6',
+      name: 'James Wilson',
+      outlet: 'Reuters',
+      role: 'Tech Correspondent',
+      score: 79,
+      topics: ['Big Tech', 'Regulation'],
+      reason: 'Reports on major technology companies and regulatory developments.',
+      initials: 'JW'
+    }
+  ];
+
+  function renderMatches(matches) {
+    const grid = document.getElementById('matches-grid');
+    const emptyState = document.getElementById('empty-state');
+
+    if (matches.length === 0) {
+      grid.style.display = 'none';
+      emptyState.style.display = 'block';
+      return;
+    }
+
+    grid.style.display = 'grid';
+    emptyState.style.display = 'none';
+
+    grid.innerHTML = matches.map(match => `
+      <div class="match-card" onclick="showMatchDetails('${match.id}')">
+        <div class="match-header">
+          <div class="match-avatar">${match.initials}</div>
+          <div class="match-info">
+            <div class="match-name">${match.name}</div>
+            <div class="match-role">${match.role} at ${match.outlet}</div>
+          </div>
+          <div class="match-score">
+            <div class="match-score-value">${match.score}%</div>
+            <div class="match-score-label">Match</div>
+          </div>
+        </div>
+        <div class="match-topics">
+          ${match.topics.map(topic => `<span class="topic-tag">${topic}</span>`).join('')}
+        </div>
+        <div class="match-reason">${match.reason}</div>
+        <div class="flex gap-sm">
+          <button class="btn btn-primary btn-sm" style="flex: 1" onclick="event.stopPropagation(); showMatchDetails('${match.id}')">
+            View Details
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); saveMatch('${match.id}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function showMatchDetails(matchId) {
+    const match = allMatches.find(m => m.id === matchId);
+    if (!match) return;
+
+    document.getElementById('modal-title').textContent = match.name;
+    document.getElementById('modal-content').innerHTML = `
+      <div class="flex gap-lg mb-lg">
+        <div class="match-avatar" style="width: 64px; height: 64px; font-size: 1.5rem;">${match.initials}</div>
+        <div>
+          <h4>${match.name}</h4>
+          <p class="text-muted">${match.role} at ${match.outlet}</p>
+          <div class="mt-sm">
+            <span class="status-label ${match.score >= 90 ? 'completed' : match.score >= 80 ? 'in-progress' : 'pending'}">
+              ${match.score}% Match
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-lg">
+        <h4 class="mb-sm">Matched Topics</h4>
+        <div class="match-topics">
+          ${match.topics.map(topic => `<span class="topic-tag">${topic}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="mb-lg">
+        <h4 class="mb-sm">Why This Match?</h4>
+        <div class="match-reason">${match.reason}</div>
+      </div>
+
+      <div class="alert alert-info">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>Click "Get Insights" to receive AI-powered pitch suggestions and talking points.</span>
+      </div>
+    `;
+
+    window.app.modal.open('match-modal');
+  }
+
+  function saveMatch(matchId) {
+    window.app.ui.showAlert('Match saved to your list', 'success');
+  }
+
+  function updateStats() {
+    document.getElementById('total-matches').textContent = allMatches.length;
+    document.getElementById('high-quality').textContent = allMatches.filter(m => m.score >= 90).length;
+    document.getElementById('total-results').textContent = allMatches.length;
+  }
+
+  function filterMatches() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const minScore = parseInt(document.getElementById('score-filter').value);
+
+    let filtered = allMatches.filter(match => {
+      const matchesSearch = match.name.toLowerCase().includes(searchTerm) ||
+                           match.outlet.toLowerCase().includes(searchTerm) ||
+                           match.topics.some(t => t.toLowerCase().includes(searchTerm));
+      const matchesScore = match.score >= minScore;
+      return matchesSearch && matchesScore;
+    });
+
+    // Sort
+    const sortBy = document.getElementById('sort-filter').value;
+    if (sortBy === 'score') {
+      filtered.sort((a, b) => b.score - a.score);
+    } else if (sortBy === 'name') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    renderMatches(filtered);
+    document.getElementById('total-results').textContent = filtered.length;
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    allMatches = sampleMatches;
+    renderMatches(allMatches);
+    updateStats();
+
+    // Add event listeners
+    document.getElementById('search-input').addEventListener('input',
+      window.app.ui.debounce(filterMatches, 300)
+    );
+    document.getElementById('score-filter').addEventListener('change', filterMatches);
+    document.getElementById('sort-filter').addEventListener('change', filterMatches);
+    document.getElementById('refresh-matches').addEventListener('click', () => {
+      window.app.ui.showAlert('Matches refreshed', 'success');
+      document.getElementById('last-updated').textContent = 'Updated just now';
+    });
+  });
+</script>
+{% endblock %}
